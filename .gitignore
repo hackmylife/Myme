@@ -1,0 +1,48 @@
+# ── Rust / Cargo ─────────────────────────────────────────────────────────────
+/target/
+Cargo.lock          # omit lock from library crates; keep for binaries if desired
+
+# ── macOS / Xcode ─────────────────────────────────────────────────────────────
+*.xcuserstate
+xcuserdata/
+*.xcworkspace/xcuserdata/
+*.xcworkspace/xcshareddata/IDEWorkspaceChecks.plist
+DerivedData/
+*.pbxuser
+!default.pbxuser
+*.mode1v3
+!default.mode1v3
+*.mode2v3
+!default.mode2v3
+*.perspectivev3
+!default.perspectivev3
+build/
+
+# ── Dictionary data ───────────────────────────────────────────────────────────
+# Raw source dictionaries can be large; don't commit them.
+data/raw/*
+!data/raw/.gitkeep
+
+# Compiled binary dictionaries are build artefacts.
+data/dict/*
+!data/dict/.gitkeep
+
+# ── macOS system noise ────────────────────────────────────────────────────────
+.DS_Store
+.AppleDouble
+.LSOverride
+Icon\r
+._*
+.Spotlight-V100
+.Trashes
+
+# ── Editor / IDE ──────────────────────────────────────────────────────────────
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# ── Environment / secrets ─────────────────────────────────────────────────────
+.env
+.env.*

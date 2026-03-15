@@ -1,0 +1,21 @@
+[package]
+name    = "myme-core"
+description = "Core IME engine: romaji conversion, dictionary lookup, and candidate ranking."
+version.workspace   = true
+edition.workspace   = true
+authors.workspace   = true
+license.workspace   = true
+repository.workspace = true
+
+[lib]
+name    = "myme_core"
+crate-type = ["lib", "staticlib", "cdylib"]
+
+[dependencies]
+serde    = { workspace = true }
+bincode  = { workspace = true }
+log      = { workspace = true }
+thiserror = { workspace = true }
+
+[dev-dependencies]
+tempfile = "3"

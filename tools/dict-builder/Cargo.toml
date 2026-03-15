@@ -1,0 +1,22 @@
+[package]
+name    = "dict-builder"
+description = "Offline tool: converts raw dictionary source files in data/raw/ into the compiled binary format consumed by myme-core at runtime."
+version.workspace   = true
+edition.workspace   = true
+authors.workspace   = true
+license.workspace   = true
+repository.workspace = true
+
+[[bin]]
+name = "dict-builder"
+path = "src/main.rs"
+
+[dependencies]
+# myme-core is listed here so dict-builder can reuse the on-disk Entry type
+# definition once it is stabilised.  Remove if the builder remains fully
+# independent.
+myme-core    = { path = "../../crates/myme-core" }
+serde        = { workspace = true }
+bincode      = { workspace = true }
+log          = { workspace = true }
+encoding_rs  = "0.8"

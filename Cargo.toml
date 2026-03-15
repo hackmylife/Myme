@@ -1,0 +1,21 @@
+[workspace]
+resolver = "2"
+members = [
+    "crates/myme-core",
+    "crates/myme-cli",
+    "tools/dict-builder",
+]
+
+[workspace.package]
+version     = "0.1.0"
+edition     = "2021"
+authors     = ["myme contributors"]
+license     = "MIT"
+repository  = "https://github.com/naoki.watanabe/myme"
+
+# Workspace-level dependency versions; crates opt-in via { workspace = true }.
+[workspace.dependencies]
+serde    = { version = "1", features = ["derive"] }
+bincode  = "1"
+log      = "0.4"
+thiserror = "1"

@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN"
+          "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>CFBundleIdentifier</key>
+    <string>com.myme.inputmethod.Myme</string>
+
+    <key>CFBundleName</key>
+    <string>MymeIM</string>
+
+    <key>CFBundleDisplayName</key>
+    <string>Myme</string>
+
+    <key>CFBundleVersion</key>
+    <string>2</string>
+
+    <key>CFBundleShortVersionString</key>
+    <string>0.1.1</string>
+
+    <key>CFBundlePackageType</key>
+    <string>APPL</string>
+
+    <key>CFBundleSignature</key>
+    <string>????</string>
+
+    <key>CFBundleExecutable</key>
+    <string>MymeIM</string>
+
+    <key>CFBundleDevelopmentRegion</key>
+    <string>ja</string>
+
+    <key>NSPrincipalClass</key>
+    <string>NSApplication</string>
+
+    <!-- Background-only app (required for input methods) -->
+    <key>LSBackgroundOnly</key>
+    <true/>
+
+    <!-- InputMethodKit keys -->
+    <key>InputMethodConnectionName</key>
+    <string>com.myme.inputmethod.Myme_Connection</string>
+
+    <key>InputMethodServerControllerClass</key>
+    <string>MymeInputController</string>
+
+    <key>tsInputMethodCharacterRepertoireKey</key>
+    <array>
+        <string>Hiragana</string>
+        <string>Katakana</string>
+        <string>Han</string>
+    </array>
+
+    <key>tsInputMethodIconFileKey</key>
+    <string></string>
+
+    <!-- Input mode list (tsInputModeListKey format) -->
+    <key>ComponentInputModeDict</key>
+    <dict>
+        <key>tsInputModeListKey</key>
+        <dict>
+            <key>com.myme.inputmethod.Myme.Hiragana</key>
+            <dict>
+                <key>TISIntendedLanguage</key>
+                <string>ja</string>
+                <key>TISInputSourceID</key>
+                <string>com.myme.inputmethod.Myme.Hiragana</string>
+                <key>tsInputModeMenuIconFileKey</key>
+                <string></string>
+                <key>tsInputModeAlternateMenuIconFileKey</key>
+                <string></string>
+                <key>tsInputModeKeyEquivalentModifiersKey</key>
+                <integer>0</integer>
+                <key>tsInputModeKeyEquivalentKey</key>
+                <string></string>
+                <key>tsInputModeDefaultStateKey</key>
+                <true/>
+                <key>tsInputModeScriptKey</key>
+                <string>smJapanese</string>
+                <key>tsInputModePrimaryInScriptKey</key>
+                <true/>
+                <key>tsInputModeIsVisibleKey</key>
+                <true/>
+                <key>tsInputModeJISKeyboardShortcutKey</key>
+                <integer>0</integer>
+            </dict>
+        </dict>
+        <key>tsVisibleInputModeOrderedArrayKey</key>
+        <array>
+            <string>com.myme.inputmethod.Myme.Hiragana</string>
+        </array>
+    </dict>
+
+    <key>LSMinimumSystemVersion</key>
+    <string>11.0</string>
+</dict>
+</plist>
