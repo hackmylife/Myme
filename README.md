@@ -92,6 +92,8 @@ echo "へんかん" | cargo run -p myme-cli -- --lookup
 | `-l` / `--lookup` | stdin からかなを読み、辞書候補を表示 |
 | `-e` / `--eval <file>` | JSONL 評価ファイルを実行しメトリクス表示 |
 | `-v` / `--verbose` | eval 時に失敗ケースのセグメント詳細を表示 |
+| `-r` / `--report <file>` | 評価結果を JSONL で詳細出力 |
+| `--tag <tag>` | 指定タグのケースのみ評価 |
 
 ## 開発フェーズ
 
@@ -298,7 +300,7 @@ Phase 4: 個人最適化
 | 評価セット | 完全一致 | セグメント精度 |
 |-----------|---------|--------------|
 | basic.jsonl (50件, 単語) | 100% (50/50) | 100% |
-| sentence.jsonl (30件, 文) | 90.0% (27/30) | 92.5% |
+| sentence.jsonl (30件, 文) | 96.7% (29/30) | 96.7% |
 
 ### 文レベル精度の課題分析
 
@@ -323,6 +325,43 @@ Phase 4: 個人最適化
 | ffi | 16 | C FFI ラウンドトリップ、状態管理、候補選択 |
 | dict-builder | 10 | ひらがなバリデーション |
 | doc-tests | 2 | Session / RomajiConverter の使用例 |
+
+## 評価基盤
+
+### メトリクス
+
+| 指標 | 定義 |
+|------|------|
+| Top-1 accuracy | 全セグメントの第1候補で正解が出る割合 (= 完全文一致率) |
+| Top-3 accuracy | 各セグメントの上位3候補から正解を構成できる割合 |
+| Top-5 accuracy | 各セグメントの上位5候補から正解を構成できる割合 |
+| Not-found rate | 正解がどの候補にも含まれない割合 (辞書不足・分割ミス) |
+| Rank-miss rate | 正解候補はあるが第1候補でない割合 (順位付けの弱さ) |
+
+### エラー分類
+
+| カテゴリ | 意味 | 主な原因 |
+|---------|------|---------|
+| `correct` | 正解 | — |
+| `rank_miss` | 候補にあるが順位が低い | 頻度スコア不足、学習不足 |
+| `not_found` | 候補に正解がない | 辞書欠落、活用不足 |
+| `segmentation_error` | 文節分割が不正 | Viterbi コスト、辞書境界 |
+
+### 評価データ形式 (JSONL)
+
+```jsonl
+{"input": "きょう", "expected": "今日", "tags": ["noun", "time"], "note": "日付"}
+```
+
+`tags` と `note` は省略可能。既存データとの下位互換あり。
+
+### 詳細レポート出力
+
+```bash
+cargo run -p myme-cli -- --eval data/eval/sentence.jsonl --report report.jsonl --verbose
+```
+
+各ケースについてセグメントごとの候補一覧・正解順位・エラー分類を JSONL で出力。
 
 ## 辞書形式
 

@@ -1,8 +1,8 @@
-{"input": "きょう", "expected": "今日"}
-{"input": "あした", "expected": "明日"}
-{"input": "にほん", "expected": "日本"}
-{"input": "にほんご", "expected": "日本語"}
-{"input": "へんかん", "expected": "変換"}
+{"input": "きょう", "expected": "今日", "tags": ["noun", "time"]}
+{"input": "あした", "expected": "明日", "tags": ["noun", "time"]}
+{"input": "にほん", "expected": "日本", "tags": ["noun", "proper"]}
+{"input": "にほんご", "expected": "日本語", "tags": ["noun"]}
+{"input": "へんかん", "expected": "変換", "tags": ["noun", "tech"]}
 {"input": "がっこう", "expected": "学校"}
 {"input": "せんせい", "expected": "先生"}
 {"input": "がくせい", "expected": "学生"}

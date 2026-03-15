@@ -125,13 +125,20 @@ impl Segment {
 const UNKNOWN_COST: i64 = 80;
 
 /// Per-segment overhead.  Each new segment incurs this fixed cost, which
-/// discourages over-segmentation.
-const SEGMENT_PENALTY: i64 = 8;
+/// discourages over-segmentation.  The +1 over MAX_SCORE_CONTRIBUTION acts
+/// as a tiebreaker: two segments (cost 1+1=2) always cost more than one
+/// segment with the same total score (cost 1).
+const SEGMENT_PENALTY: i64 = 9;
 
 /// Maximum score contribution per segment.  Caps `sqrt(top_score)` so that
 /// single-char entries with many candidates (high position-based scores) don't
 /// dominate over compound words with fewer candidates.
-const MAX_SCORE_CONTRIBUTION: i64 = 6;
+///
+/// At MAX=8, entries with score ≥64 all get cost=1.  Combined with
+/// SEGMENT_PENALTY=9 (= MAX + 1), every additional segment boundary adds
+/// at least 1 to the path cost, ensuring fewer segments are preferred
+/// when individual segment costs are identical.
+const MAX_SCORE_CONTRIBUTION: i64 = 8;
 
 /// A node in the DP lattice for Viterbi segmentation.
 #[derive(Clone)]
@@ -578,5 +585,75 @@ mod tests {
             surfaces.contains(&"ン"),
             "expected ン in candidates for unknown ん, got {surfaces:?}"
         );
+    }
+}
+
+#[cfg(test)]
+mod debug_tests {
+    use super::*;
+    use crate::dictionary::SimpleDictionary;
+    use crate::dictionary::DictionaryLookup;
+
+    #[test]
+    fn trace_shigoto_ga_owaru() {
+        let dict_path = std::path::Path::new("../../data/dict/system.dict");
+        if !dict_path.exists() {
+            eprintln!("skipping: system.dict not found");
+            return;
+        }
+        let dict = SimpleDictionary::load_from_file(dict_path).unwrap();
+
+        let reading = "しごとがおわる";
+        let chars: Vec<char> = reading.chars().collect();
+        let n = chars.len();
+
+        let mut dp: Vec<(i64, usize)> = vec![(i64::MAX, 0); n + 1];
+        dp[0] = (0, 0);
+
+        for i in 0..n {
+            if dp[i].0 == i64::MAX { continue; }
+            let remaining: String = chars[i..].iter().collect();
+            let prefix_matches = dict.common_prefix_search(&remaining);
+
+            for (matched_reading, candidates) in &prefix_matches {
+                let matched_len = matched_reading.chars().count();
+                let top_score = candidates.first().map(|c| c.score as f64).unwrap_or(0.0);
+                let score_contribution = (top_score.sqrt() as i64).min(6);
+                let seg_cost = 8 - score_contribution;
+                let new_cost = dp[i].0 + seg_cost;
+                let j = i + matched_len;
+
+                let dominated = new_cost < dp[j].0
+                    || (new_cost == dp[j].0 && matched_len > dp[j].1);
+
+                eprintln!(
+                    "pos={i} match={matched_reading}({matched_len}) top_score={top_score:.0} sqrt={:.1} contrib={score_contribution} seg_cost={seg_cost} new_cost={new_cost} j={j} dp[j]=({},{}) dominated={dominated}",
+                    top_score.sqrt(),
+                    dp[j].0, dp[j].1
+                );
+
+                if j <= n && dominated {
+                    dp[j] = (new_cost, matched_len);
+                }
+            }
+
+            // unknown fallback
+            let unk_cost = dp[i].0 + 80;
+            if unk_cost < dp[i+1].0 {
+                dp[i+1] = (unk_cost, 1);
+            }
+        }
+
+        // Backtrack
+        let mut path = Vec::new();
+        let mut pos = n;
+        while pos > 0 {
+            let len = dp[pos].1;
+            let seg: String = chars[pos-len..pos].iter().collect();
+            path.push(format!("{}(cost_at_end={})", seg, dp[pos].0));
+            pos -= len;
+        }
+        path.reverse();
+        eprintln!("PATH: {}", path.join(" + "));
     }
 }
