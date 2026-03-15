@@ -234,6 +234,22 @@ impl SimpleDictionary {
                     deduped.push(entry);
                 }
             }
+            // For freq-annotated entries that came from extra.dict with low
+            // position scores, recalculate their score using the full candidate
+            // count so they compete fairly with the main dictionary entries.
+            let total = deduped.len() as u32;
+            for entry in deduped.iter_mut() {
+                if let Some(freq) = entry.frequency {
+                    if freq > 0 {
+                        let freq_bonus = ((freq as f64).log2() as u32) * 7;
+                        // Use the full candidate count for position score.
+                        let boosted_score = total * 10 + freq_bonus;
+                        if boosted_score > entry.score {
+                            entry.score = boosted_score;
+                        }
+                    }
+                }
+            }
             *entry_list = deduped;
         }
 
@@ -271,6 +287,8 @@ const PARTICLE_READINGS: &[&str] = &[
     "は", "が", "を", "に", "の", "と", "で", "も", "な", "だ",
     "へ", "か", "よ", "ね", "わ", "さ", "ぞ", "て", "ば", "や",
     "し", "け", "ら", "ん",
+    // Demonstratives
+    "この", "その", "あの", "どの", "これ", "それ", "あれ", "どれ",
     // Two-char function words
     "から", "まで", "より", "ので", "のに", "けど", "でも", "だが",
     "する", "した", "して", "です", "ます", "ない", "ある", "いる",

@@ -3,48 +3,114 @@
 {"input": "にほん", "expected": "日本", "tags": ["noun", "proper"]}
 {"input": "にほんご", "expected": "日本語", "tags": ["noun"]}
 {"input": "へんかん", "expected": "変換", "tags": ["noun", "tech"]}
-{"input": "がっこう", "expected": "学校"}
-{"input": "せんせい", "expected": "先生"}
-{"input": "がくせい", "expected": "学生"}
-{"input": "しごと", "expected": "仕事"}
-{"input": "でんわ", "expected": "電話"}
-{"input": "じかん", "expected": "時間"}
-{"input": "ともだち", "expected": "友達"}
-{"input": "たべもの", "expected": "食べ物"}
-{"input": "のみもの", "expected": "飲み物"}
-{"input": "かいしゃ", "expected": "会社"}
-{"input": "びょういん", "expected": "病院"}
-{"input": "えいが", "expected": "映画"}
-{"input": "おんがく", "expected": "音楽"}
-{"input": "しんぶん", "expected": "新聞"}
-{"input": "ざっし", "expected": "雑誌"}
-{"input": "てんき", "expected": "天気"}
-{"input": "きのう", "expected": "昨日"}
-{"input": "やすみ", "expected": "休み"}
-{"input": "りょこう", "expected": "旅行"}
-{"input": "べんきょう", "expected": "勉強"}
-{"input": "しゅくだい", "expected": "宿題"}
-{"input": "れきし", "expected": "歴史"}
-{"input": "かがく", "expected": "科学"}
-{"input": "すうがく", "expected": "数学"}
-{"input": "けいざい", "expected": "経済"}
-{"input": "せいじ", "expected": "政治"}
-{"input": "しゃかい", "expected": "社会"}
-{"input": "ぶんか", "expected": "文化"}
-{"input": "しぜん", "expected": "自然"}
-{"input": "かんきょう", "expected": "環境"}
-{"input": "ぎじゅつ", "expected": "技術"}
-{"input": "こうつう", "expected": "交通"}
-{"input": "けんこう", "expected": "健康"}
-{"input": "きょういく", "expected": "教育"}
-{"input": "かぞく", "expected": "家族"}
-{"input": "せいかつ", "expected": "生活"}
-{"input": "もんだい", "expected": "問題"}
-{"input": "けっか", "expected": "結果"}
-{"input": "じょうほう", "expected": "情報"}
-{"input": "けいけん", "expected": "経験"}
-{"input": "じゆう", "expected": "自由"}
-{"input": "へいわ", "expected": "平和"}
-{"input": "あんぜん", "expected": "安全"}
-{"input": "きけん", "expected": "危険"}
-{"input": "しあわせ", "expected": "幸せ"}
+{"input": "がっこう", "expected": "学校", "tags": ["noun"]}
+{"input": "せんせい", "expected": "先生", "tags": ["noun"]}
+{"input": "がくせい", "expected": "学生", "tags": ["noun"]}
+{"input": "しごと", "expected": "仕事", "tags": ["noun"]}
+{"input": "でんわ", "expected": "電話", "tags": ["noun"]}
+{"input": "じかん", "expected": "時間", "tags": ["noun"]}
+{"input": "ともだち", "expected": "友達", "tags": ["noun"]}
+{"input": "たべもの", "expected": "食べ物", "tags": ["noun"]}
+{"input": "のみもの", "expected": "飲み物", "tags": ["noun"]}
+{"input": "かいしゃ", "expected": "会社", "tags": ["noun"]}
+{"input": "びょういん", "expected": "病院", "tags": ["noun"]}
+{"input": "えいが", "expected": "映画", "tags": ["noun"]}
+{"input": "おんがく", "expected": "音楽", "tags": ["noun"]}
+{"input": "しんぶん", "expected": "新聞", "tags": ["noun"]}
+{"input": "ざっし", "expected": "雑誌", "tags": ["noun"]}
+{"input": "てんき", "expected": "天気", "tags": ["noun"]}
+{"input": "きのう", "expected": "昨日", "tags": ["noun", "time"]}
+{"input": "やすみ", "expected": "休み", "tags": ["noun"]}
+{"input": "りょこう", "expected": "旅行", "tags": ["noun"]}
+{"input": "べんきょう", "expected": "勉強", "tags": ["noun"]}
+{"input": "しゅくだい", "expected": "宿題", "tags": ["noun"]}
+{"input": "れきし", "expected": "歴史", "tags": ["noun"]}
+{"input": "かがく", "expected": "科学", "tags": ["noun"]}
+{"input": "すうがく", "expected": "数学", "tags": ["noun"]}
+{"input": "けいざい", "expected": "経済", "tags": ["noun"]}
+{"input": "せいじ", "expected": "政治", "tags": ["noun"]}
+{"input": "しゃかい", "expected": "社会", "tags": ["noun"]}
+{"input": "ぶんか", "expected": "文化", "tags": ["noun"]}
+{"input": "しぜん", "expected": "自然", "tags": ["noun"]}
+{"input": "かんきょう", "expected": "環境", "tags": ["noun"]}
+{"input": "ぎじゅつ", "expected": "技術", "tags": ["noun"]}
+{"input": "こうつう", "expected": "交通", "tags": ["noun"]}
+{"input": "けんこう", "expected": "健康", "tags": ["noun"]}
+{"input": "きょういく", "expected": "教育", "tags": ["noun"]}
+{"input": "かぞく", "expected": "家族", "tags": ["noun"]}
+{"input": "せいかつ", "expected": "生活", "tags": ["noun"]}
+{"input": "もんだい", "expected": "問題", "tags": ["noun"]}
+{"input": "けっか", "expected": "結果", "tags": ["noun"]}
+{"input": "じょうほう", "expected": "情報", "tags": ["noun"]}
+{"input": "けいけん", "expected": "経験", "tags": ["noun"]}
+{"input": "じゆう", "expected": "自由", "tags": ["noun"]}
+{"input": "へいわ", "expected": "平和", "tags": ["noun"]}
+{"input": "あんぜん", "expected": "安全", "tags": ["noun"]}
+{"input": "きけん", "expected": "危険", "tags": ["noun"]}
+{"input": "しあわせ", "expected": "幸せ", "tags": ["noun"]}
+{"input": "くうこう", "expected": "空港", "tags": ["noun"]}
+{"input": "としょかん", "expected": "図書館", "tags": ["noun"]}
+{"input": "びじゅつかん", "expected": "美術館", "tags": ["noun"]}
+{"input": "だいがく", "expected": "大学", "tags": ["noun"]}
+{"input": "ちゅうがっこう", "expected": "中学校", "tags": ["noun"]}
+{"input": "しょうがっこう", "expected": "小学校", "tags": ["noun"]}
+{"input": "こうこう", "expected": "高校", "tags": ["noun"]}
+{"input": "せんもん", "expected": "専門", "tags": ["noun"]}
+{"input": "けんきゅう", "expected": "研究", "tags": ["noun"]}
+{"input": "ろんぶん", "expected": "論文", "tags": ["noun"]}
+{"input": "かいぎ", "expected": "会議", "tags": ["noun"]}
+{"input": "やくそく", "expected": "約束", "tags": ["noun"]}
+{"input": "じゅんび", "expected": "準備", "tags": ["noun"]}
+{"input": "けいかく", "expected": "計画", "tags": ["noun"]}
+{"input": "せつめい", "expected": "説明", "tags": ["noun"]}
+{"input": "しつもん", "expected": "質問", "tags": ["noun"]}
+{"input": "こたえ", "expected": "答え", "tags": ["noun"]}
+{"input": "いけん", "expected": "意見", "tags": ["noun"]}
+{"input": "かのうせい", "expected": "可能性", "tags": ["noun"]}
+{"input": "げんいん", "expected": "原因", "tags": ["noun"]}
+{"input": "いみ", "expected": "意味", "tags": ["noun"]}
+{"input": "りゆう", "expected": "理由", "tags": ["noun"]}
+{"input": "もくてき", "expected": "目的", "tags": ["noun"]}
+{"input": "ほうほう", "expected": "方法", "tags": ["noun"]}
+{"input": "じっさい", "expected": "実際", "tags": ["noun"]}
+{"input": "とくべつ", "expected": "特別", "tags": ["noun"]}
+{"input": "ひつよう", "expected": "必要", "tags": ["noun"]}
+{"input": "たいせつ", "expected": "大切", "tags": ["noun"]}
+{"input": "かんたん", "expected": "簡単", "tags": ["noun"]}
+{"input": "ふくざつ", "expected": "複雑", "tags": ["noun"]}
+{"input": "ていねい", "expected": "丁寧", "tags": ["noun"]}
+{"input": "あたらしい", "expected": "新しい", "tags": ["adjective"]}
+{"input": "ふるい", "expected": "古い", "tags": ["adjective"]}
+{"input": "おおきい", "expected": "大きい", "tags": ["adjective"]}
+{"input": "ちいさい", "expected": "小さい", "tags": ["adjective"]}
+{"input": "ながい", "expected": "長い", "tags": ["adjective"]}
+{"input": "みじかい", "expected": "短い", "tags": ["adjective"]}
+{"input": "はやい", "expected": "早い", "tags": ["adjective"]}
+{"input": "おそい", "expected": "遅い", "tags": ["adjective"]}
+{"input": "つよい", "expected": "強い", "tags": ["adjective"]}
+{"input": "よわい", "expected": "弱い", "tags": ["adjective"]}
+{"input": "むずかしい", "expected": "難しい", "tags": ["adjective"]}
+{"input": "やさしい", "expected": "優しい", "tags": ["adjective"]}
+{"input": "たのしい", "expected": "楽しい", "tags": ["adjective"]}
+{"input": "おもしろい", "expected": "面白い", "tags": ["adjective"]}
+{"input": "うつくしい", "expected": "美しい", "tags": ["adjective"]}
+{"input": "いく", "expected": "行く", "tags": ["verb"]}
+{"input": "くる", "expected": "来る", "tags": ["verb"]}
+{"input": "たべる", "expected": "食べる", "tags": ["verb"]}
+{"input": "のむ", "expected": "飲む", "tags": ["verb"]}
+{"input": "みる", "expected": "見る", "tags": ["verb"]}
+{"input": "きく", "expected": "聞く", "tags": ["verb"]}
+{"input": "よむ", "expected": "読む", "tags": ["verb"]}
+{"input": "かく", "expected": "書く", "tags": ["verb"]}
+{"input": "はなす", "expected": "話す", "tags": ["verb"]}
+{"input": "おもう", "expected": "思う", "tags": ["verb"]}
+{"input": "しる", "expected": "知る", "tags": ["verb"]}
+{"input": "わかる", "expected": "分かる", "tags": ["verb"]}
+{"input": "つくる", "expected": "作る", "tags": ["verb"]}
+{"input": "かう", "expected": "買う", "tags": ["verb"]}
+{"input": "おわる", "expected": "終わる", "tags": ["verb"]}
+{"input": "はじまる", "expected": "始まる", "tags": ["verb"]}
+{"input": "かける", "expected": "掛ける", "tags": ["verb"]}
+{"input": "あつめる", "expected": "集める", "tags": ["verb"]}
+{"input": "まなぶ", "expected": "学ぶ", "tags": ["verb"]}
+{"input": "ねがう", "expected": "願う", "tags": ["verb"]}
