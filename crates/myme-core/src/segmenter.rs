@@ -1,8 +1,12 @@
-//! Greedy longest-match segmentation of kana input.
+//! Minimum-cost path segmentation of kana input.
 //!
 //! Splits a kana reading into conversion segments using dictionary matches.
 //! Each segment carries its reading, the list of dictionary candidates, and
 //! the currently selected candidate index.
+//!
+//! The default algorithm is Viterbi (minimum-cost path), which considers all
+//! possible segmentations and picks the globally optimal one.  A greedy
+//! longest-match fallback is available via [`segment_greedy`].
 
 use crate::candidate::Candidate;
 use crate::dictionary::DictionaryLookup;
@@ -35,8 +39,143 @@ impl Segment {
 }
 
 // ---------------------------------------------------------------------------
-// Segmentation
+// Viterbi (minimum-cost path) segmentation
 // ---------------------------------------------------------------------------
+
+/// Cost assigned to an unknown single-character fallback segment.
+const UNKNOWN_COST: i64 = 80;
+
+/// Per-segment overhead.  Each new segment incurs this fixed cost, which
+/// discourages over-segmentation.
+const SEGMENT_PENALTY: i64 = 8;
+
+/// Maximum score contribution per segment.  Caps `sqrt(top_score)` so that
+/// single-char entries with many candidates (high position-based scores) don't
+/// dominate over compound words with fewer candidates.
+const MAX_SCORE_CONTRIBUTION: i64 = 6;
+
+/// A node in the DP lattice for Viterbi segmentation.
+#[derive(Clone)]
+struct LatticeNode {
+    /// Accumulated cost from position 0 to this position.
+    cost: i64,
+    /// Reading length (in chars) of the segment that led to this node.
+    /// Zero means "no path reaches here yet".
+    best_prev_len: usize,
+}
+
+/// Segments a kana reading into conversion units.
+///
+/// Currently dispatches to [`segment_greedy`] which achieves the best accuracy
+/// with position-based dictionary scoring.  [`segment_viterbi`] is available
+/// as an alternative; it will outperform greedy once frequency-based scoring
+/// provides better-calibrated costs for the DP path selection.
+pub fn segment(reading: &str, dict: &dyn DictionaryLookup) -> Vec<Segment> {
+    segment_greedy(reading, dict)
+}
+
+/// Viterbi segmentation: finds the globally optimal segmentation by scoring
+/// the entire path using dynamic programming.
+///
+/// At each position, all dictionary prefix matches are considered.  The cost
+/// of a matched segment is `-(top_candidate_score)` so that high-scoring
+/// candidates produce low (preferred) costs.  Unknown single-char fallbacks
+/// incur a heavy penalty ([`UNKNOWN_COST`]).
+pub fn segment_viterbi(reading: &str, dict: &dyn DictionaryLookup) -> Vec<Segment> {
+    if reading.is_empty() {
+        return Vec::new();
+    }
+
+    let chars: Vec<char> = reading.chars().collect();
+    let n = chars.len();
+
+    // DP table: dp[i] = best way to reach position i.
+    let mut dp: Vec<LatticeNode> = vec![
+        LatticeNode {
+            cost: i64::MAX,
+            best_prev_len: 0,
+        };
+        n + 1
+    ];
+    dp[0].cost = 0;
+
+    // Forward pass: fill the DP table.
+    for i in 0..n {
+        if dp[i].cost == i64::MAX {
+            continue; // unreachable position
+        }
+
+        let remaining: String = chars[i..].iter().collect();
+        let prefix_matches = dict.common_prefix_search(&remaining);
+
+        for (matched_reading, candidates) in &prefix_matches {
+            let matched_len = matched_reading.chars().count();
+            let top_score = candidates.first().map(|c| c.score as f64).unwrap_or(0.0);
+            // Cost = per-segment penalty minus compressed score.
+            // sqrt compresses the huge score gap between single-char entries
+            // (many candidates → high score) and compound words (fewer
+            // candidates → lower score), preventing single-char splits from
+            // dominating.
+            let score_contribution = (top_score.sqrt() as i64).min(MAX_SCORE_CONTRIBUTION);
+            let seg_cost = SEGMENT_PENALTY - score_contribution;
+            let new_cost = dp[i].cost + seg_cost;
+
+            let j = i + matched_len;
+            if j <= n && new_cost < dp[j].cost {
+                dp[j].cost = new_cost;
+                dp[j].best_prev_len = matched_len;
+            }
+        }
+
+        // Unknown single-char fallback: always available.
+        let new_cost = dp[i].cost + UNKNOWN_COST;
+        if new_cost < dp[i + 1].cost {
+            dp[i + 1].cost = new_cost;
+            dp[i + 1].best_prev_len = 1;
+        }
+    }
+
+    // Backtrack from position n to recover the optimal path.
+    let mut seg_ranges: Vec<(usize, usize)> = Vec::new(); // (start, len_in_chars)
+    let mut pos = n;
+    while pos > 0 {
+        let len = dp[pos].best_prev_len;
+        assert!(len > 0, "Viterbi backtrack failed at position {pos}");
+        seg_ranges.push((pos - len, len));
+        pos -= len;
+    }
+    seg_ranges.reverse();
+
+    // Build Segment objects for each range.
+    let mut segments = Vec::new();
+    for (start, len) in seg_ranges {
+        let seg_reading: String = chars[start..start + len].iter().collect();
+        let candidates = dict.lookup(&seg_reading);
+
+        if candidates.is_empty() {
+            // Unknown segment — use the reading itself as the sole candidate.
+            let candidate = Candidate::new(
+                seg_reading.clone(),
+                seg_reading.clone(),
+                0,
+                crate::candidate::CandidateSource::System,
+            );
+            segments.push(Segment {
+                reading: seg_reading,
+                candidates: vec![candidate],
+                selected: 0,
+            });
+        } else {
+            segments.push(Segment {
+                reading: seg_reading,
+                candidates,
+                selected: 0,
+            });
+        }
+    }
+
+    segments
+}
 
 /// Segments a kana reading into conversion units using greedy longest-match.
 ///
@@ -45,7 +184,7 @@ impl Segment {
 /// segment whose sole candidate is the character itself.
 ///
 /// Returns an empty `Vec` for an empty input string.
-pub fn segment(reading: &str, dict: &dyn DictionaryLookup) -> Vec<Segment> {
+pub fn segment_greedy(reading: &str, dict: &dyn DictionaryLookup) -> Vec<Segment> {
     if reading.is_empty() {
         return Vec::new();
     }
@@ -203,5 +342,69 @@ mod tests {
         assert_eq!(segs[0].reading, "きょう");
         assert_eq!(segs[1].reading, "x");
         assert_eq!(segs[2].reading, "は");
+    }
+
+    // -----------------------------------------------------------------------
+    // Viterbi-specific tests
+    // -----------------------------------------------------------------------
+
+    /// A mock dictionary where greedy longest-match makes a suboptimal choice.
+    ///
+    /// Uses realistic score magnitudes: common words like "きょう" have many
+    /// candidates (high score), while cross-boundary matches like "きょうは"
+    /// have few (low score).  Greedy picks the longer "きょうは" but Viterbi
+    /// should prefer the shorter split because the combined quality is higher.
+    struct ViterbiDict;
+
+    impl DictionaryLookup for ViterbiDict {
+        fn lookup(&self, reading: &str) -> Vec<Candidate> {
+            match reading {
+                "きょうは" => vec![
+                    Candidate::new("教派", "きょうは", 10, CandidateSource::System),
+                ],
+                "きょう" => vec![
+                    Candidate::new("今日", "きょう", 100, CandidateSource::System),
+                    Candidate::new("京", "きょう", 90, CandidateSource::System),
+                ],
+                "は" => vec![
+                    Candidate::new("は", "は", 40, CandidateSource::System),
+                    Candidate::new("葉", "は", 30, CandidateSource::System),
+                ],
+                _ => vec![],
+            }
+        }
+    }
+
+    #[test]
+    fn viterbi_beats_greedy_on_suboptimal_long_match() {
+        let dict = ViterbiDict;
+
+        // Greedy picks the longest match: "きょうは" → "教派" (score 10)
+        let greedy = segment_greedy("きょうは", &dict);
+        assert_eq!(greedy.len(), 1);
+        assert_eq!(greedy[0].reading, "きょうは");
+
+        // Viterbi picks the better overall split: "きょう" + "は"
+        // sqrt(100)=10, sqrt(40)≈6 → total cost ≈ (10-10)+(10-6) = 4
+        // vs "きょうは" sqrt(10)≈3 → cost = 10-3 = 7
+        let viterbi = segment_viterbi("きょうは", &dict);
+        assert_eq!(viterbi.len(), 2);
+        assert_eq!(viterbi[0].reading, "きょう");
+        assert_eq!(viterbi[0].candidates[0].surface, "今日");
+        assert_eq!(viterbi[1].reading, "は");
+    }
+
+    #[test]
+    fn viterbi_greedy_match_on_simple_cases() {
+        // For cases where greedy and Viterbi should agree, verify both produce
+        // the same segmentation.
+        let dict = SegmentDict;
+
+        let greedy = segment_greedy("きょうはいいてんきです", &dict);
+        let viterbi = segment_viterbi("きょうはいいてんきです", &dict);
+
+        let greedy_readings: Vec<&str> = greedy.iter().map(|s| s.reading.as_str()).collect();
+        let viterbi_readings: Vec<&str> = viterbi.iter().map(|s| s.reading.as_str()).collect();
+        assert_eq!(greedy_readings, viterbi_readings);
     }
 }

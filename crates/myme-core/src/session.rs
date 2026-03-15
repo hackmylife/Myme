@@ -208,10 +208,15 @@ impl Session {
             Vec::new()
         };
 
-        let action = match &self.state {
-            SessionState::Idle => self.handle_idle(key, dict),
-            SessionState::Composing => self.handle_composing(key, dict),
-            SessionState::Converting => self.handle_converting(key, dict),
+        let action = {
+            // Reborrow learning immutably for boost application during conversion.
+            // The block scope ensures this borrow ends before the mutable use below.
+            let learning_ref = learning.as_deref();
+            match &self.state {
+                SessionState::Idle => self.handle_idle(key, dict),
+                SessionState::Composing => self.handle_composing(key, dict, learning_ref),
+                SessionState::Converting => self.handle_converting(key, dict),
+            }
         };
 
         // Record learning data when a conversion is committed from Converting state.
@@ -264,15 +269,38 @@ impl Session {
     /// Performs segmentation on `confirmed_kana` and transitions to
     /// `Converting` state.  Returns `ShowCandidates` if any segment has
     /// candidates, otherwise stays in `Composing` and returns `Noop`.
-    fn try_convert(&mut self, dict: &dyn DictionaryLookup) -> SessionAction {
+    fn try_convert(
+        &mut self,
+        dict: &dyn DictionaryLookup,
+        learning: Option<&LearningStore>,
+    ) -> SessionAction {
         let segments = segmenter::segment(&self.confirmed_kana, dict);
         if segments.is_empty() {
             return SessionAction::Noop;
         }
         self.segments = segments;
         self.active_segment = 0;
+        if let Some(learning) = learning {
+            self.apply_learning_boosts(learning);
+        }
         self.state = SessionState::Converting;
         self.show_candidates_action()
+    }
+
+    /// Applies learning boosts to all candidates in all segments, re-sorts,
+    /// and resets selection indices.
+    fn apply_learning_boosts(&mut self, learning: &LearningStore) {
+        for seg in &mut self.segments {
+            for cand in &mut seg.candidates {
+                let boost = learning.boost(&seg.reading, &cand.surface);
+                if boost > 0 {
+                    cand.score += boost;
+                    cand.source = crate::candidate::CandidateSource::Learning;
+                }
+            }
+            seg.candidates.sort();
+            seg.selected = 0;
+        }
     }
 
     // -----------------------------------------------------------------------
@@ -297,7 +325,12 @@ impl Session {
     }
 
     /// Handles a key event while in [`SessionState::Composing`].
-    fn handle_composing(&mut self, key: KeyEvent, dict: &dyn DictionaryLookup) -> SessionAction {
+    fn handle_composing(
+        &mut self,
+        key: KeyEvent,
+        dict: &dyn DictionaryLookup,
+        learning: Option<&LearningStore>,
+    ) -> SessionAction {
         match key {
             KeyEvent::Character(ch) => {
                 let out = self.romaji.feed(ch);
@@ -314,7 +347,7 @@ impl Session {
                     // Nothing to convert.
                     return SessionAction::Noop;
                 }
-                self.try_convert(dict)
+                self.try_convert(dict, learning)
             }
 
             KeyEvent::Enter => {
@@ -1162,5 +1195,61 @@ mod tests {
         // Learning should have recorded both segments.
         assert!(learning.boost("きょう", "今日") > 0);
         assert!(learning.boost("は", "は") > 0);
+    }
+
+    // -----------------------------------------------------------------------
+    // 27. Learning boost promotes a non-default candidate to first
+    // -----------------------------------------------------------------------
+
+    #[test]
+    fn test_learning_boost_promotes_candidate() {
+        let dict = MockDictionary;
+        let mut learning = LearningStore::new();
+
+        // Record "京" 5 times so its boost = 50, exceeding "今日"'s base score
+        // of 30.  京 has base score 20, so boosted score = 20 + 50 = 70.
+        for _ in 0..5 {
+            learning.record("きょう", "京");
+        }
+
+        let mut session = Session::new();
+        feed_chars(&mut session, &dict, "kyou");
+        let action = session.handle_key(KeyEvent::Space, &dict, Some(&mut learning));
+
+        match action {
+            SessionAction::ShowCandidates { candidates, selected, .. } => {
+                // "京" should now be first thanks to the learning boost.
+                assert_eq!(selected, 0);
+                assert_eq!(candidates[0].surface, "京");
+            }
+            _ => panic!("expected ShowCandidates, got {:?}", action),
+        }
+    }
+
+    // -----------------------------------------------------------------------
+    // 28. Boosted candidates have CandidateSource::Learning
+    // -----------------------------------------------------------------------
+
+    #[test]
+    fn test_learning_boost_sets_source() {
+        use crate::candidate::CandidateSource;
+
+        let dict = MockDictionary;
+        let mut learning = LearningStore::new();
+
+        learning.record("きょう", "京");
+
+        let mut session = Session::new();
+        feed_chars(&mut session, &dict, "kyou");
+        let action = session.handle_key(KeyEvent::Space, &dict, Some(&mut learning));
+
+        match action {
+            SessionAction::ShowCandidates { candidates, .. } => {
+                // Find the "京" candidate and verify its source.
+                let boosted = candidates.iter().find(|c| c.surface == "京").unwrap();
+                assert_eq!(boosted.source, CandidateSource::Learning);
+            }
+            _ => panic!("expected ShowCandidates"),
+        }
     }
 }

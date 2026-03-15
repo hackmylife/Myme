@@ -37,6 +37,7 @@ fn main() {
     let interactive = args.iter().any(|a| a == "--interactive" || a == "-i");
     let lookup = args.iter().any(|a| a == "--lookup" || a == "-l");
     let eval = args.iter().any(|a| a == "--eval" || a == "-e");
+    let verbose = args.iter().any(|a| a == "--verbose" || a == "-v");
 
     if interactive {
         if let Err(e) = run_interactive() {
@@ -58,7 +59,7 @@ fn main() {
 
         match eval_path {
             Some(path) => {
-                if let Err(e) = run_eval(&path) {
+                if let Err(e) = run_eval(&path, verbose) {
                     eprintln!("error: {e}");
                     std::process::exit(1);
                 }
@@ -368,7 +369,7 @@ struct EvalCase {
 }
 
 /// Run evaluation on a JSONL file and report metrics.
-fn run_eval(eval_path: &str) -> Result<(), Box<dyn std::error::Error>> {
+fn run_eval(eval_path: &str, verbose: bool) -> Result<(), Box<dyn std::error::Error>> {
     let dict_path = find_dict_path().ok_or(
         "cannot find data/dict/system.dict — \
          run from the project root or install the dictionary alongside the binary",
@@ -384,7 +385,7 @@ fn run_eval(eval_path: &str) -> Result<(), Box<dyn std::error::Error>> {
     let mut exact_match = 0usize;
     let mut total_segments = 0usize;
     let mut correct_segments = 0usize;
-    let mut failures: Vec<(String, String, String)> = Vec::new();
+    let mut failures: Vec<(String, String, String, Vec<String>)> = Vec::new();
 
     for line in text.lines() {
         let line = line.trim();
@@ -409,7 +410,15 @@ fn run_eval(eval_path: &str) -> Result<(), Box<dyn std::error::Error>> {
         if actual == case.expected {
             exact_match += 1;
         } else {
-            failures.push((case.input.clone(), case.expected.clone(), actual.clone()));
+            let seg_detail: Vec<String> = if verbose {
+                segments
+                    .iter()
+                    .map(|seg| format!("{}→{}", seg.reading, seg.selected_surface()))
+                    .collect()
+            } else {
+                Vec::new()
+            };
+            failures.push((case.input.clone(), case.expected.clone(), actual.clone(), seg_detail));
         }
 
         // Per-segment accuracy: compare character-by-character between
@@ -456,10 +465,13 @@ fn run_eval(eval_path: &str) -> Result<(), Box<dyn std::error::Error>> {
 
     if !failures.is_empty() {
         println!("\n--- Failures ---");
-        for (input, expected, actual) in &failures {
+        for (input, expected, actual, seg_detail) in &failures {
             println!("  input:    {input}");
             println!("  expected: {expected}");
             println!("  actual:   {actual}");
+            if !seg_detail.is_empty() {
+                println!("  segments: {}", seg_detail.join(" | "));
+            }
             println!();
         }
     }
