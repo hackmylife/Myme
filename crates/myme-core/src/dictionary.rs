@@ -199,7 +199,7 @@ impl SimpleDictionary {
 
                     let position_score = (total - i as u32) * 10;
                     let freq_bonus = frequency
-                        .map(|f| if f > 0 { ((f as f64).log2() as u32) * 3 } else { 0 })
+                        .map(|f| if f > 0 { ((f as f64).log2() as u32) * 7 } else { 0 })
                         .unwrap_or(0);
 
                     DictEntry {
@@ -214,6 +214,27 @@ impl SimpleDictionary {
                 .entry(reading.to_string())
                 .or_default()
                 .extend(dict_entries);
+        }
+
+        // Deduplicate entries with the same reading+surface, keeping the
+        // higher score.  This handles the case where the same word appears
+        // in both the main dictionary and extra.dict — the freq-annotated
+        // version from extra.dict should win.
+        for entry_list in entries.values_mut() {
+            let mut seen: std::collections::HashMap<String, usize> = std::collections::HashMap::new();
+            let mut deduped: Vec<DictEntry> = Vec::new();
+            for entry in entry_list.drain(..) {
+                if let Some(&idx) = seen.get(&entry.surface) {
+                    // Keep the higher score.
+                    if entry.score > deduped[idx].score {
+                        deduped[idx] = entry;
+                    }
+                } else {
+                    seen.insert(entry.surface.clone(), deduped.len());
+                    deduped.push(entry);
+                }
+            }
+            *entry_list = deduped;
         }
 
         Ok(Self { entries })

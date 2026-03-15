@@ -133,6 +133,7 @@ fn main() {
 
     let input_path = workspace_root.join("data/raw/SKK-JISYO.L");
     let freq_path = workspace_root.join("data/raw/frequency.tsv");
+    let extra_path = workspace_root.join("data/raw/extra.dict");
     let output_path = workspace_root.join("data/dict/system.dict");
 
     // -----------------------------------------------------------------------
@@ -219,6 +220,26 @@ fn main() {
     }
 
     // -----------------------------------------------------------------------
+    // Append extra dictionary entries (manually curated verb/adjective forms).
+    // -----------------------------------------------------------------------
+    let mut extra_entries: usize = 0;
+    if extra_path.exists() {
+        let extra_text = fs::read_to_string(&extra_path).unwrap_or_else(|e| {
+            eprintln!("warning: could not read {}: {}", extra_path.display(), e);
+            String::new()
+        });
+        for line in extra_text.lines() {
+            let trimmed = line.trim();
+            if trimmed.is_empty() || trimmed.starts_with(';') {
+                continue;
+            }
+            let annotated = annotate_line(trimmed, &freq_table);
+            out_lines.push(annotated);
+            extra_entries += 1;
+        }
+    }
+
+    // -----------------------------------------------------------------------
     // Write output.
     // -----------------------------------------------------------------------
     if let Some(parent) = output_path.parent() {
@@ -259,6 +280,7 @@ fn main() {
     println!("  total entries seen : {total_entries}");
     println!("  hiragana entries   : {kept_entries}");
     println!("  freq-annotated     : {freq_annotated}");
+    println!("  extra entries      : {extra_entries}");
     println!("  filtered out       : {filtered_entries}");
 }
 
