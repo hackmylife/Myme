@@ -145,12 +145,12 @@ struct LatticeNode {
 
 /// Segments a kana reading into conversion units.
 ///
-/// Currently dispatches to [`segment_greedy`] which achieves the best accuracy
-/// with position-based dictionary scoring.  [`segment_viterbi`] is available
-/// as an alternative; it will outperform greedy once frequency-based scoring
-/// provides better-calibrated costs for the DP path selection.
+/// Dispatches to [`segment_viterbi`] which finds the globally optimal
+/// segmentation using dynamic programming.  Frequency-annotated dictionary
+/// scores ensure the cost function correctly prefers common compound words
+/// over single-character splits.
 pub fn segment(reading: &str, dict: &dyn DictionaryLookup) -> Vec<Segment> {
-    segment_greedy(reading, dict)
+    segment_viterbi(reading, dict)
 }
 
 /// Viterbi segmentation: finds the globally optimal segmentation by scoring

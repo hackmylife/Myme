@@ -13,6 +13,7 @@
 //! cargo run -p dict-builder --release
 //! ```
 
+use std::collections::HashMap;
 use std::fs;
 use std::io::Write as IoWrite;
 use std::path::Path;
@@ -34,6 +35,88 @@ fn is_all_hiragana(s: &str) -> bool {
     !s.is_empty() && s.chars().all(is_hiragana_char)
 }
 
+/// Load frequency data from a TSV file.
+///
+/// Format: `reading\tsurface\tfrequency` (lines starting with `#` are comments).
+/// Returns a map from `(reading, surface)` to frequency.
+fn load_frequency_table(path: &Path) -> HashMap<(String, String), u32> {
+    let mut table = HashMap::new();
+    let text = match fs::read_to_string(path) {
+        Ok(t) => t,
+        Err(e) => {
+            eprintln!("warning: could not read frequency file {}: {}", path.display(), e);
+            return table;
+        }
+    };
+    for line in text.lines() {
+        let line = line.trim();
+        if line.is_empty() || line.starts_with('#') {
+            continue;
+        }
+        let parts: Vec<&str> = line.split('\t').collect();
+        if parts.len() >= 3 {
+            if let Ok(freq) = parts[2].parse::<u32>() {
+                table.insert((parts[0].to_string(), parts[1].to_string()), freq);
+            }
+        }
+    }
+    table
+}
+
+/// Annotate a dictionary line with frequency data.
+///
+/// For each candidate in the line, if `(reading, surface)` exists in the
+/// frequency table, append `;freq=N` to that candidate.
+fn annotate_line(line: &str, freq_table: &HashMap<(String, String), u32>) -> String {
+    let trimmed = line.trim();
+    if trimmed.is_empty() || trimmed.starts_with(';') {
+        return line.to_string();
+    }
+    let Some((reading, rest)) = trimmed.split_once(' ') else {
+        return line.to_string();
+    };
+    // rest looks like: /候補1/候補2;annotation/.../
+    let rest = rest.trim();
+    if !rest.starts_with('/') {
+        return line.to_string();
+    }
+
+    let candidates: Vec<&str> = rest[1..]
+        .split('/')
+        .collect();
+
+    let mut new_candidates: Vec<String> = Vec::new();
+    for cand in &candidates {
+        let cand = cand.trim();
+        if cand.is_empty() {
+            continue;
+        }
+        // Extract the bare surface (strip existing annotations).
+        let surface = cand.split_once(';').map(|(s, _)| s).unwrap_or(cand);
+        let existing_ann = cand.split_once(';').map(|(_, a)| a);
+
+        let key = (reading.to_string(), surface.to_string());
+        if let Some(&freq) = freq_table.get(&key) {
+            // Merge freq annotation.  If there's already a freq= annotation,
+            // replace it; otherwise append.
+            if let Some(ann) = existing_ann {
+                if ann.starts_with("freq=") {
+                    // Replace existing freq.
+                    new_candidates.push(format!("{};freq={}", surface, freq));
+                } else {
+                    new_candidates.push(format!("{};{};freq={}", surface, ann, freq));
+                }
+            } else {
+                new_candidates.push(format!("{};freq={}", surface, freq));
+            }
+        } else {
+            new_candidates.push(cand.to_string());
+        }
+    }
+
+    format!("{} /{}/", reading, new_candidates.join("/"))
+}
+
 fn main() {
     // -----------------------------------------------------------------------
     // Locate input / output paths relative to the workspace root.
@@ -49,6 +132,7 @@ fn main() {
         .expect("could not determine workspace root from CARGO_MANIFEST_DIR");
 
     let input_path = workspace_root.join("data/raw/SKK-JISYO.L");
+    let freq_path = workspace_root.join("data/raw/frequency.tsv");
     let output_path = workspace_root.join("data/dict/system.dict");
 
     // -----------------------------------------------------------------------
@@ -76,6 +160,12 @@ fn main() {
     }
 
     // -----------------------------------------------------------------------
+    // Load frequency data (optional — missing file is not an error).
+    // -----------------------------------------------------------------------
+    let freq_table = load_frequency_table(&freq_path);
+    let freq_count = freq_table.len();
+
+    // -----------------------------------------------------------------------
     // Parse the decoded text and filter to hiragana-only readings.
     //
     // SKK-JISYO.L has two logical sections separated by the comment line:
@@ -85,12 +175,16 @@ fn main() {
     // We process both sections the same way: if the reading field
     // (everything before the first ASCII space on a non-comment line) is
     // entirely hiragana, keep the line verbatim; otherwise skip it.
+    //
+    // If frequency data is available, annotate matching candidates with
+    // `;freq=N` annotations.
     // -----------------------------------------------------------------------
     let mut total_entries: usize = 0;
     let mut kept_entries: usize = 0;
+    let mut freq_annotated: usize = 0;
 
     // Collect output lines; we'll write them all at once.
-    let mut out_lines: Vec<&str> = Vec::with_capacity(150_000);
+    let mut out_lines: Vec<String> = Vec::with_capacity(150_000);
 
     for line in utf8_text.lines() {
         let trimmed = line.trim();
@@ -98,7 +192,7 @@ fn main() {
         // Keep comment/blank lines as-is in the output for readability,
         // but do not count them toward the entry statistics.
         if trimmed.is_empty() || trimmed.starts_with(';') {
-            out_lines.push(line);
+            out_lines.push(line.to_string());
             continue;
         }
 
@@ -115,7 +209,11 @@ fn main() {
         };
 
         if is_all_hiragana(reading) {
-            out_lines.push(line);
+            let annotated = annotate_line(line, &freq_table);
+            if annotated != line {
+                freq_annotated += 1;
+            }
+            out_lines.push(annotated);
             kept_entries += 1;
         }
     }
@@ -156,9 +254,11 @@ fn main() {
     let filtered_entries = total_entries - kept_entries;
     println!("dict-builder: done.");
     println!("  input  : {}", input_path.display());
+    println!("  freq   : {} ({} entries)", freq_path.display(), freq_count);
     println!("  output : {}", output_path.display());
     println!("  total entries seen : {total_entries}");
     println!("  hiragana entries   : {kept_entries}");
+    println!("  freq-annotated     : {freq_annotated}");
     println!("  filtered out       : {filtered_entries}");
 }
 

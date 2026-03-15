@@ -240,9 +240,54 @@ impl SimpleDictionary {
     }
 }
 
+/// Readings that commonly function as particles or function words.
+///
+/// For these readings the hiragana form itself is by far the most frequent
+/// surface in normal Japanese text, yet position-based SKK scoring buries it
+/// under dozens of rare kanji.  We inject the hiragana form as a high-score
+/// candidate so it consistently ranks first.
+const PARTICLE_READINGS: &[&str] = &[
+    "は", "が", "を", "に", "の", "と", "で", "も", "な", "だ",
+    "へ", "か", "よ", "ね", "わ", "さ", "ぞ", "て", "ば", "や",
+    "し", "け", "ら", "ん",
+    // Two-char function words
+    "から", "まで", "より", "ので", "のに", "けど", "でも", "だが",
+    "する", "した", "して", "です", "ます", "ない", "ある", "いる",
+    "ただ", "また", "もう", "まだ", "よく", "すぐ",
+];
+
+/// If `reading` is a known particle/function word, insert the hiragana-as-is
+/// candidate at the top of the list with a high score.
+fn boost_particle_candidates(reading: &str, candidates: &mut Vec<Candidate>) {
+    if !PARTICLE_READINGS.contains(&reading) {
+        return;
+    }
+    // Don't add if the hiragana form already exists and is already first.
+    if let Some(first) = candidates.first() {
+        if first.surface == reading {
+            return;
+        }
+    }
+    // Remove any existing hiragana-as-is candidate (will be re-added at top).
+    candidates.retain(|c| c.surface != reading);
+    // Insert at the front with a very high score so it ranks first after sort.
+    let boost_score = candidates.first().map(|c| c.score).unwrap_or(10) + 100;
+    candidates.insert(
+        0,
+        Candidate::new(reading, reading, boost_score, CandidateSource::System),
+    );
+}
+
 impl DictionaryLookup for SimpleDictionary {
     fn lookup(&self, reading: &str) -> Vec<Candidate> {
         let Some(dict_entries) = self.entries.get(reading) else {
+            // Even if there is no dictionary entry, particles should still
+            // produce their hiragana form as a candidate.
+            if PARTICLE_READINGS.contains(&reading) {
+                return vec![Candidate::new(
+                    reading, reading, 10, CandidateSource::System,
+                )];
+            }
             return Vec::new();
         };
 
@@ -257,6 +302,8 @@ impl DictionaryLookup for SimpleDictionary {
                 )
             })
             .collect();
+
+        boost_particle_candidates(reading, &mut candidates);
 
         // Sort best-first; Candidate's Ord impl puts higher scores first.
         candidates.sort();
@@ -283,6 +330,7 @@ impl DictionaryLookup for SimpleDictionary {
                         )
                     })
                     .collect();
+                boost_particle_candidates(&prefix, &mut candidates);
                 candidates.sort();
                 results.push((prefix, candidates));
             }
