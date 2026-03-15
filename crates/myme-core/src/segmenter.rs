@@ -8,8 +8,87 @@
 //! possible segmentations and picks the globally optimal one.  A greedy
 //! longest-match fallback is available via [`segment_greedy`].
 
-use crate::candidate::Candidate;
+use crate::candidate::{Candidate, CandidateSource};
 use crate::dictionary::DictionaryLookup;
+
+// ---------------------------------------------------------------------------
+// Kana conversion helpers
+// ---------------------------------------------------------------------------
+
+/// Converts a hiragana string to katakana by shifting each character's
+/// Unicode code point.  Hiragana U+3041..=U+3096 maps to katakana
+/// U+30A1..=U+30F6.  Characters outside the hiragana range are passed through
+/// unchanged.
+fn to_katakana(hiragana: &str) -> String {
+    hiragana
+        .chars()
+        .map(|c| {
+            let cp = c as u32;
+            if (0x3041..=0x3096).contains(&cp) {
+                // SAFETY: the shifted value is always a valid Unicode scalar.
+                char::from_u32(cp + 0x60).unwrap_or(c)
+            } else {
+                c
+            }
+        })
+        .collect()
+}
+
+/// Returns `true` if every character in `s` is in the hiragana Unicode block
+/// (U+3041..=U+3096).
+fn is_all_hiragana(s: &str) -> bool {
+    !s.is_empty() && s.chars().all(|c| (0x3041u32..=0x3096u32).contains(&(c as u32)))
+}
+
+/// Appends katakana and hiragana fallback candidates to `seg` when the
+/// reading is entirely hiragana.
+///
+/// * Katakana candidate — surface is the katakana form of the reading, score 1.
+///   Only added when a candidate with that surface does not already exist.
+/// * Hiragana candidate — surface equals the reading, score 0.
+///   Only added when dictionary candidates are present (i.e. this is not
+///   already a bare hiragana/unknown segment) **and** no existing candidate
+///   already has that surface.
+fn ensure_fallback_candidates(seg: &mut Segment) {
+    if !is_all_hiragana(&seg.reading) {
+        return;
+    }
+
+    let kata = to_katakana(&seg.reading);
+    let already_has_kata = seg.candidates.iter().any(|c| c.surface == kata);
+    if !already_has_kata {
+        seg.candidates.push(Candidate::new(
+            kata,
+            seg.reading.clone(),
+            1,
+            CandidateSource::System,
+        ));
+    }
+
+    // Add hiragana as-is only when there are dictionary matches (i.e. the
+    // first candidate came from the dictionary, not from an unknown-char
+    // fallback).  We detect this by checking whether any candidate has a
+    // surface different from the reading (a sure sign of a dict entry) OR the
+    // candidates list has more than one entry.
+    let has_dict_matches = seg.candidates.len() > 1
+        || seg
+            .candidates
+            .first()
+            .map(|c| c.surface != seg.reading)
+            .unwrap_or(false);
+
+    if has_dict_matches {
+        let already_has_hira = seg.candidates.iter().any(|c| c.surface == seg.reading);
+        if !already_has_hira {
+            seg.candidates.push(Candidate::new(
+                seg.reading.clone(),
+                seg.reading.clone(),
+                0,
+                CandidateSource::System,
+            ));
+        }
+    }
+}
 
 // ---------------------------------------------------------------------------
 // Segment
@@ -158,7 +237,7 @@ pub fn segment_viterbi(reading: &str, dict: &dyn DictionaryLookup) -> Vec<Segmen
                 seg_reading.clone(),
                 seg_reading.clone(),
                 0,
-                crate::candidate::CandidateSource::System,
+                CandidateSource::System,
             );
             segments.push(Segment {
                 reading: seg_reading,
@@ -172,6 +251,10 @@ pub fn segment_viterbi(reading: &str, dict: &dyn DictionaryLookup) -> Vec<Segmen
                 selected: 0,
             });
         }
+    }
+
+    for seg in &mut segments {
+        ensure_fallback_candidates(seg);
     }
 
     segments
@@ -216,7 +299,7 @@ pub fn segment_greedy(reading: &str, dict: &dyn DictionaryLookup) -> Vec<Segment
                 ch.clone(),
                 ch.clone(),
                 0,
-                crate::candidate::CandidateSource::System,
+                CandidateSource::System,
             );
             segments.push(Segment {
                 reading: ch,
@@ -225,6 +308,10 @@ pub fn segment_greedy(reading: &str, dict: &dyn DictionaryLookup) -> Vec<Segment
             });
             pos += 1;
         }
+    }
+
+    for seg in &mut segments {
+        ensure_fallback_candidates(seg);
     }
 
     segments
@@ -406,5 +493,90 @@ mod tests {
         let greedy_readings: Vec<&str> = greedy.iter().map(|s| s.reading.as_str()).collect();
         let viterbi_readings: Vec<&str> = viterbi.iter().map(|s| s.reading.as_str()).collect();
         assert_eq!(greedy_readings, viterbi_readings);
+    }
+
+    // -----------------------------------------------------------------------
+    // Fallback candidate tests
+    // -----------------------------------------------------------------------
+
+    #[test]
+    fn to_katakana_conversion() {
+        assert_eq!(to_katakana("きょう"), "キョウ");
+        assert_eq!(to_katakana("あいうえお"), "アイウエオ");
+        // Non-hiragana characters pass through unchanged.
+        assert_eq!(to_katakana("abc"), "abc");
+        // Mixed input.
+        assert_eq!(to_katakana("きaう"), "キaウ");
+    }
+
+    #[test]
+    fn katakana_candidate_is_added() {
+        // "きょう" has dictionary matches; the fallback must append a katakana
+        // candidate "キョウ" at the end of the list.
+        let dict = SegmentDict;
+        let segs = segment("きょう", &dict);
+        let surfaces: Vec<&str> = segs[0].candidates.iter().map(|c| c.surface.as_str()).collect();
+        assert!(
+            surfaces.contains(&"キョウ"),
+            "expected キョウ in candidates, got {surfaces:?}"
+        );
+        // Katakana candidate should be near the end (low score).
+        let kata_pos = surfaces.iter().position(|&s| s == "キョウ").unwrap();
+        assert!(
+            kata_pos >= 2,
+            "katakana candidate should be after dict candidates, got pos {kata_pos}"
+        );
+    }
+
+    #[test]
+    fn hiragana_candidate_is_added() {
+        // "きょう" has dictionary matches; the fallback must also append a
+        // hiragana as-is candidate "きょう".
+        let dict = SegmentDict;
+        let segs = segment("きょう", &dict);
+        let surfaces: Vec<&str> = segs[0].candidates.iter().map(|c| c.surface.as_str()).collect();
+        assert!(
+            surfaces.contains(&"きょう"),
+            "expected きょう in candidates, got {surfaces:?}"
+        );
+    }
+
+    #[test]
+    fn katakana_not_duplicated() {
+        // Build a dict that already returns a katakana surface for a reading.
+        struct KataDict;
+        impl DictionaryLookup for KataDict {
+            fn lookup(&self, reading: &str) -> Vec<Candidate> {
+                match reading {
+                    "き" => vec![
+                        Candidate::new("キ", "き", 10, CandidateSource::System),
+                    ],
+                    _ => vec![],
+                }
+            }
+        }
+
+        let dict = KataDict;
+        let segs = segment_greedy("き", &dict);
+        let kata_count = segs[0]
+            .candidates
+            .iter()
+            .filter(|c| c.surface == "キ")
+            .count();
+        assert_eq!(kata_count, 1, "katakana candidate should not be duplicated");
+    }
+
+    #[test]
+    fn unknown_segment_gets_katakana() {
+        // "ん" has no dictionary entry; it becomes an unknown segment.  After
+        // Fix 1 it should gain a katakana candidate "ン".
+        let dict = SegmentDict;
+        let segs = segment("ん", &dict);
+        assert_eq!(segs.len(), 1);
+        let surfaces: Vec<&str> = segs[0].candidates.iter().map(|c| c.surface.as_str()).collect();
+        assert!(
+            surfaces.contains(&"ン"),
+            "expected ン in candidates for unknown ん, got {surfaces:?}"
+        );
     }
 }

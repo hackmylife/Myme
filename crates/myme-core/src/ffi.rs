@@ -763,7 +763,7 @@ mod tests {
         assert!(!result.is_null());
         let r = unsafe { &*result };
         assert!(matches!(r.action_type, MymeActionType::ShowCandidates));
-        assert_eq!(r.candidate_count, 2);
+        assert_eq!(r.candidate_count, 3); // dict candidates + hiragana fallback
         assert!(!r.candidates.is_null());
 
         // Verify first candidate surface.

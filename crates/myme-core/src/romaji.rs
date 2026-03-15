@@ -58,7 +58,9 @@ static ROMAJI_TABLE: &[(&str, &str)] = &[
     ("ko", "こ"),
     // ── KY-combo ──────────────────────────────────────────────────────────
     ("kya", "きゃ"),
+    ("kyi", "きぃ"),
     ("kyu", "きゅ"),
+    ("kye", "きぇ"),
     ("kyo", "きょ"),
     // ── S-row ─────────────────────────────────────────────────────────────
     ("sa", "さ"),
@@ -66,6 +68,12 @@ static ROMAJI_TABLE: &[(&str, &str)] = &[
     ("su", "す"),
     ("se", "せ"),
     ("so", "そ"),
+    // ── SY-combo ──────────────────────────────────────────────────────────
+    ("sya", "しゃ"),
+    ("syi", "しぃ"),
+    ("syu", "しゅ"),
+    ("sye", "しぇ"),
+    ("syo", "しょ"),
     // ── SH-combo ──────────────────────────────────────────────────────────
     ("sha", "しゃ"),
     ("shi", "し"),
@@ -80,8 +88,21 @@ static ROMAJI_TABLE: &[(&str, &str)] = &[
     ("tu", "つ"),
     ("te", "て"),
     ("to", "と"),
+    // ── TY-combo ──────────────────────────────────────────────────────────
+    ("tya", "ちゃ"),
+    ("tyi", "ちぃ"),
+    ("tyu", "ちゅ"),
+    ("tye", "ちぇ"),
+    ("tyo", "ちょ"),
+    // ── CY-combo ──────────────────────────────────────────────────────────
+    ("cya", "ちゃ"),
+    ("cyi", "ちぃ"),
+    ("cyu", "ちゅ"),
+    ("cye", "ちぇ"),
+    ("cyo", "ちょ"),
     // ── CH-combo ──────────────────────────────────────────────────────────
     ("cha", "ちゃ"),
+    ("chi", "ち"),
     ("chu", "ちゅ"),
     ("che", "ちぇ"),
     ("cho", "ちょ"),
@@ -93,7 +114,9 @@ static ROMAJI_TABLE: &[(&str, &str)] = &[
     ("no", "の"),
     // ── NY-combo ──────────────────────────────────────────────────────────
     ("nya", "にゃ"),
+    ("nyi", "にぃ"),
     ("nyu", "にゅ"),
+    ("nye", "にぇ"),
     ("nyo", "にょ"),
     // ── H-row ─────────────────────────────────────────────────────────────
     ("ha", "は"),
@@ -104,7 +127,9 @@ static ROMAJI_TABLE: &[(&str, &str)] = &[
     ("ho", "ほ"),
     // ── HY-combo ──────────────────────────────────────────────────────────
     ("hya", "ひゃ"),
+    ("hyi", "ひぃ"),
     ("hyu", "ひゅ"),
+    ("hye", "ひぇ"),
     ("hyo", "ひょ"),
     // ── M-row ─────────────────────────────────────────────────────────────
     ("ma", "ま"),
@@ -114,7 +139,9 @@ static ROMAJI_TABLE: &[(&str, &str)] = &[
     ("mo", "も"),
     // ── MY-combo ──────────────────────────────────────────────────────────
     ("mya", "みゃ"),
+    ("myi", "みぃ"),
     ("myu", "みゅ"),
+    ("mye", "みぇ"),
     ("myo", "みょ"),
     // ── Y-row ─────────────────────────────────────────────────────────────
     ("ya", "や"),
@@ -128,7 +155,9 @@ static ROMAJI_TABLE: &[(&str, &str)] = &[
     ("ro", "ろ"),
     // ── RY-combo ──────────────────────────────────────────────────────────
     ("rya", "りゃ"),
+    ("ryi", "りぃ"),
     ("ryu", "りゅ"),
+    ("rye", "りぇ"),
     ("ryo", "りょ"),
     // ── W-row ─────────────────────────────────────────────────────────────
     ("wa", "わ"),
@@ -143,7 +172,9 @@ static ROMAJI_TABLE: &[(&str, &str)] = &[
     ("go", "ご"),
     // ── GY-combo ──────────────────────────────────────────────────────────
     ("gya", "ぎゃ"),
+    ("gyi", "ぎぃ"),
     ("gyu", "ぎゅ"),
+    ("gye", "ぎぇ"),
     ("gyo", "ぎょ"),
     // ── Z-row ─────────────────────────────────────────────────────────────
     ("za", "ざ"),
@@ -154,15 +185,26 @@ static ROMAJI_TABLE: &[(&str, &str)] = &[
     ("zo", "ぞ"),
     // ── JY/ZY-combo ───────────────────────────────────────────────────────
     ("ja", "じゃ"),
+    ("ji", "じ"),
     ("ju", "じゅ"),
     ("je", "じぇ"),
     ("jo", "じょ"),
     ("jya", "じゃ"),
+    ("jyi", "じぃ"),
     ("jyu", "じゅ"),
+    ("jye", "じぇ"),
     ("jyo", "じょ"),
     ("zya", "じゃ"),
+    ("zyi", "じぃ"),
     ("zyu", "じゅ"),
+    ("zye", "じぇ"),
     ("zyo", "じょ"),
+    // ── DY-combo ──────────────────────────────────────────────────────────
+    ("dya", "ぢゃ"),
+    ("dyi", "ぢぃ"),
+    ("dyu", "ぢゅ"),
+    ("dye", "ぢぇ"),
+    ("dyo", "ぢょ"),
     // ── D-row ─────────────────────────────────────────────────────────────
     ("da", "だ"),
     ("di", "ぢ"),
@@ -178,7 +220,9 @@ static ROMAJI_TABLE: &[(&str, &str)] = &[
     ("bo", "ぼ"),
     // ── BY-combo ──────────────────────────────────────────────────────────
     ("bya", "びゃ"),
+    ("byi", "びぃ"),
     ("byu", "びゅ"),
+    ("bye", "びぇ"),
     ("byo", "びょ"),
     // ── P-row ─────────────────────────────────────────────────────────────
     ("pa", "ぱ"),
@@ -188,8 +232,38 @@ static ROMAJI_TABLE: &[(&str, &str)] = &[
     ("po", "ぽ"),
     // ── PY-combo ──────────────────────────────────────────────────────────
     ("pya", "ぴゃ"),
+    ("pyi", "ぴぃ"),
     ("pyu", "ぴゅ"),
+    ("pye", "ぴぇ"),
     ("pyo", "ぴょ"),
+    // ── Small kana (x-prefix) ──────────────────────────────────────────────
+    ("xa", "ぁ"),
+    ("xi", "ぃ"),
+    ("xu", "ぅ"),
+    ("xe", "ぇ"),
+    ("xo", "ぉ"),
+    ("xtu", "っ"),
+    ("xtsu", "っ"),
+    ("xya", "ゃ"),
+    ("xyu", "ゅ"),
+    ("xyo", "ょ"),
+    ("xwa", "ゎ"),
+    ("xka", "ゕ"),
+    ("xke", "ゖ"),
+    // ── Small kana (l-prefix, alias for x-prefix) ───────────────────────
+    ("la", "ぁ"),
+    ("li", "ぃ"),
+    ("lu", "ぅ"),
+    ("le", "ぇ"),
+    ("lo", "ぉ"),
+    ("ltu", "っ"),
+    ("ltsu", "っ"),
+    ("lya", "ゃ"),
+    ("lyu", "ゅ"),
+    ("lyo", "ょ"),
+    ("lwa", "ゎ"),
+    ("lka", "ゕ"),
+    ("lke", "ゖ"),
     // ── ん (standalone, must be last so more-specific rules win) ──────────
     ("n", "ん"),
 ];
@@ -238,6 +312,11 @@ fn is_consonant(ch: char) -> bool {
 pub struct RomajiConverter {
     /// Romaji characters typed so far that have not yet resolved to kana.
     pending: String,
+    /// `true` when the pending `"n"` originated from an `"nn"` sequence.
+    /// On flush (commit / end-of-input) this `"n"` should be suppressed
+    /// rather than emitted as a second `ん`, because the first `ん` already
+    /// accounts for the double-n.
+    nn_pending: bool,
 }
 
 impl RomajiConverter {
@@ -252,9 +331,16 @@ impl RomajiConverter {
         &self.pending
     }
 
+    /// Returns `true` if the pending `"n"` originated from an `"nn"` sequence
+    /// and should be suppressed (not flushed as `ん`) on commit.
+    pub fn is_nn_pending(&self) -> bool {
+        self.nn_pending
+    }
+
     /// Clears all internal state.
     pub fn reset(&mut self) {
         self.pending.clear();
+        self.nn_pending = false;
     }
 
     /// Removes the last character from the pending buffer.
@@ -345,9 +431,19 @@ impl RomajiConverter {
             // end-of-input.  A future Phase 2 fix should track whether the
             // pending 'n' originated from an "nn" double-n sequence so it
             // can be suppressed on commit rather than flushed as ん.
-            if self.pending == "nn" {
+            if self.pending == "nn" && !self.nn_pending {
                 confirmed.push('ん');
                 self.pending = "n".to_string();
+                self.nn_pending = true;
+                break;
+            }
+
+            // When nn_pending is true and the user typed another 'n' (making
+            // pending "nn"), the first 'n' was already part of the previous ん.
+            // Replace it with the new 'n' as a fresh pending (not nn_pending).
+            if self.pending == "nn" && self.nn_pending {
+                self.pending = "n".to_string();
+                self.nn_pending = false;
                 break;
             }
 
@@ -362,6 +458,7 @@ impl RomajiConverter {
                 }
                 confirmed.push_str(kana);
                 self.pending.clear();
+                self.nn_pending = false;
                 break;
             }
 
@@ -381,9 +478,15 @@ impl RomajiConverter {
                 let _n = chars.next(); // 'n'
                 let next = chars.next().unwrap();
                 if is_consonant(next) && next != 'n' {
-                    confirmed.push('ん');
+                    if !self.nn_pending {
+                        // Genuine n-before-consonant: emit ん.
+                        confirmed.push('ん');
+                    }
+                    // If nn_pending, the ん was already emitted by the "nn"
+                    // rule — just consume the leftover 'n' without emitting.
                     let remainder: String = self.pending.chars().skip(1).collect();
                     self.pending = remainder;
+                    self.nn_pending = false;
                     continue;
                 }
             }
@@ -446,11 +549,14 @@ pub fn convert(romaji: &str) -> String {
     }
 
     // Flush the remaining pending buffer.
-    // Any remaining "n" becomes ん; anything else is emitted verbatim.
+    // A lone trailing "n" becomes ん UNLESS it originated from "nn" (in which
+    // case the ん was already emitted and this pending "n" should be dropped).
     let remaining = conv.pending().to_string();
     if !remaining.is_empty() {
-        if remaining == "n" {
+        if remaining == "n" && !conv.is_nn_pending() {
             result.push('ん');
+        } else if remaining == "n" && conv.is_nn_pending() {
+            // Suppress: ん was already emitted for "nn".
         } else {
             result.push_str(&remaining);
         }
@@ -612,6 +718,38 @@ mod tests {
         assert_eq!(feed_all("dzu"), "づ");
     }
 
+    // ── Small kana ──────────────────────────────────────────────────────────
+
+    #[test]
+    fn test_small_kana_x_prefix() {
+        assert_eq!(feed_all("xtu"), "っ");
+        assert_eq!(feed_all("xtsu"), "っ");
+        assert_eq!(feed_all("xya"), "ゃ");
+        assert_eq!(feed_all("xyu"), "ゅ");
+        assert_eq!(feed_all("xyo"), "ょ");
+        assert_eq!(feed_all("xa"), "ぁ");
+        assert_eq!(feed_all("xi"), "ぃ");
+        assert_eq!(feed_all("xu"), "ぅ");
+        assert_eq!(feed_all("xe"), "ぇ");
+        assert_eq!(feed_all("xo"), "ぉ");
+        assert_eq!(feed_all("xwa"), "ゎ");
+    }
+
+    #[test]
+    fn test_small_kana_l_prefix() {
+        assert_eq!(feed_all("ltu"), "っ");
+        assert_eq!(feed_all("ltsu"), "っ");
+        assert_eq!(feed_all("lya"), "ゃ");
+        assert_eq!(feed_all("lyu"), "ゅ");
+        assert_eq!(feed_all("lyo"), "ょ");
+        assert_eq!(feed_all("la"), "ぁ");
+        assert_eq!(feed_all("li"), "ぃ");
+        assert_eq!(feed_all("lu"), "ぅ");
+        assert_eq!(feed_all("le"), "ぇ");
+        assert_eq!(feed_all("lo"), "ぉ");
+        assert_eq!(feed_all("lwa"), "ゎ");
+    }
+
     #[test]
     fn test_b_row() {
         assert_eq!(feed_all("babibubebo"), "ばびぶべぼ");
@@ -702,12 +840,10 @@ mod tests {
 
     #[test]
     fn test_nn() {
-        // "nn" uses the first 'n' to confirm ん and keeps the second 'n' as
-        // pending (so that "onna" → おんな works correctly).  When the input
-        // ends after "nn", the pending 'n' is flushed as a second ん.
-        // Users who want exactly one ん type "n" before a consonant (e.g. "nk")
-        // or use the n-before-consonant rule.
-        assert_eq!(feed_all("nn"), "んん");
+        // "nn" emits exactly one ん.  The second 'n' is kept pending (so that
+        // "onna" → おんな works) but is suppressed on flush because it
+        // originated from the "nn" sequence.
+        assert_eq!(feed_all("nn"), "ん");
     }
 
     #[test]

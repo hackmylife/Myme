@@ -522,8 +522,11 @@ impl Session {
         if pending.is_empty() {
             return;
         }
-        if pending == "n" {
+        if pending == "n" && !self.romaji.is_nn_pending() {
+            // Lone trailing "n" that is NOT left over from "nn" → emit ん.
             self.confirmed_kana.push('ん');
+        } else if pending == "n" && self.romaji.is_nn_pending() {
+            // Pending "n" left from "nn" → suppress (the ん was already emitted).
         } else {
             self.confirmed_kana.push_str(&pending);
         }
@@ -618,7 +621,7 @@ mod tests {
                 assert_eq!(selected, 0);
                 assert_eq!(preedit, "へんかん");
                 assert_eq!(candidates[0].surface, "変換");
-                assert_eq!(candidates.len(), 3);
+                assert_eq!(candidates.len(), 5); // 3 dict + katakana + hiragana fallbacks
             }
             _ => panic!("expected ShowCandidates, got {:?}", action),
         }
@@ -897,7 +900,7 @@ mod tests {
         assert_eq!(session.state(), &SessionState::Converting);
         match action {
             SessionAction::ShowCandidates { candidates, .. } => {
-                assert_eq!(candidates.len(), 1);
+                assert_eq!(candidates.len(), 2); // self-candidate + katakana fallback
                 assert_eq!(candidates[0].surface, "す");
             }
             _ => panic!("expected ShowCandidates, got {:?}", action),
@@ -951,10 +954,12 @@ mod tests {
         let dict = MockDictionary;
         let mut session = Session::new();
 
-        feed_chars(&mut session, &dict, "henkan"); // 3 candidates
+        feed_chars(&mut session, &dict, "henkan"); // 5 candidates (3 dict + katakana + hiragana)
         session.handle_key(KeyEvent::Space, &dict, None); // selected=0
         session.handle_key(KeyEvent::Space, &dict, None); // selected=1
         session.handle_key(KeyEvent::Space, &dict, None); // selected=2
+        session.handle_key(KeyEvent::Space, &dict, None); // selected=3
+        session.handle_key(KeyEvent::Space, &dict, None); // selected=4
 
         // One more Space should wrap back to 0
         let action = session.handle_key(KeyEvent::Space, &dict, None);
@@ -1137,7 +1142,7 @@ mod tests {
             SessionAction::ShowCandidates { segments, candidates, selected, .. } => {
                 assert_eq!(segments.len(), 1);
                 assert_eq!(segments[0].surface, "変換");
-                assert_eq!(candidates.len(), 3);
+                assert_eq!(candidates.len(), 5); // 3 dict + katakana + hiragana fallbacks
                 assert_eq!(selected, 0);
             }
             _ => panic!("expected ShowCandidates"),
